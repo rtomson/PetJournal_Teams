@@ -6,43 +6,37 @@ local addonName, addon = ...
 local L = addon.L
 
 local _G = _G
-local GetCompanionInfo = _G.GetCompanionInfo
+local C_PetJournal = C_PetJournal
 local PetJournal = PetJournal
 
-local PETJOURNAL_DEFAULT_WIDTH = PetJournal:GetWidth()
-local PETJOURNAL_EXPANDED_WIDTH = PETJOURNAL_DEFAULT_WIDTH + 202
+local ICON_QUESTIONMARK = "Interface\\Icons\\INV_Misc_QuestionMark"
+local MACRO_NAME = "~PetTeams"
+local MAX_ACCOUNT_MACROS = MAX_ACCOUNT_MACROS or 36
 local MAX_ACTIVE_PETS = 3
 local MAX_ACTIVE_ABILITIES = 3
 local MAX_PET_ABILITIES = 6
-local ICON_QUESTIONMARK = "Interface\\Icons\\INV_Misc_QuestionMark"
-local MACRO_NAME = "~PetTeams"
+local PETJOURNAL_DEFAULT_WIDTH = PetJournal:GetWidth()
+local PETJOURNAL_EXPANDED_WIDTH = PETJOURNAL_DEFAULT_WIDTH + 202
 
-local DAILY_BATTLE_PET_QUESTS2 = {
-    31909, -- Grand Master Trixxy
-    31916, -- Grand Master Lydia Accoste
-    31926, -- Grand Master Antari
-    31935, -- Grand Master Payne
-    31953, -- Grand Master Hyuna
-    31954, -- Grand Master Mo'ruk
-    31955, -- Grand Master Nishi
-    31956, -- Grand Master Yon
-    31957, -- Grand Master Shu
-    31958, -- Grand Master Aki
-    31971, -- Grand Master Obalis
-    31991, -- Grand Master Zusshi
-    32175, -- Darkmoon Pet Battle!
-    32434, -- Burning Pandaren Spirit
-    32439, -- Flowing Pandaren Spirit
-    32440, -- Whispering Pandaren Spirit
-    32441, -- Thundering Pandaren Spirit
-}
-
-DAILY_BATTLE_PET_QUESTS = {
+local DAILY_BATTLE_PET_QUESTS = {
+    [31909] = "Grand Master Trixxy",
+    [31916] = "Grand Master Lydia Accoste",
+    [31926] = "Grand Master Antari",
+    [31935] = "Grand Master Payne",
+    [31953] = "Grand Master Hyuna",
+    [31954] = "Grand Master Mo'ruk",
     [31955] = "Grand Master Nishi",
+    [31956] = "Grand Master Yon",
+    [31957] = "Grand Master Shu",
+    [31958] = "Grand Master Aki",
+    [31971] = "Grand Master Obalis",
+    [31991] = "Grand Master Zusshi",
+    [32175] = "Darkmoon Pet Battle!",
     [32434] = "Burning Pandaren Spirit",
     [32439] = "Flowing Pandaren Spirit",
     [32440] = "Whispering Pandaren Spirit",
     [32441] = "Thundering Pandaren Spirit",
+    [32604] = "Beasts of Fable",
 }
 
 StaticPopupDialogs["PET_BATTLE_TEAMS_SET_NAME"] = {
@@ -80,7 +74,6 @@ StaticPopupDialogs["PET_BATTLE_TEAMS_SET_NAME"] = {
 function PetBattleTeams_SetTeamName(isNew, teamName)
     if teamName:len() > 0 then
         if isNew then
-            local teams = PetBattleTeamsDB.teams
             local team = {
                 name = teamName,
                 icon = nil,
@@ -96,7 +89,7 @@ function PetBattleTeams_SetTeamName(isNew, teamName)
                     end
                 end
             end
-            tinsert(teams, team)
+            tinsert(PetBattleTeamsDB.teams, team)
         else
             print("TODO: Rename: "..teamName)
         end
@@ -140,42 +133,8 @@ local function PetBattleTeams_ModifyPetJournalFrame()
 end
 
 
---------------------------------------------------
--- Local functions
---------------------------------------------------
--- returns teamName, teamIcon, questID
-local function GetBattlePetTeamInfo(index)
-    --local questID = DAILY_BATTLE_PET_QUESTS[index]
-    --local questName = "Quest: "..questID
-    --return "Team"..(index or 0), index, questID, questName
-    local name, icon, quest
-    local team = PetBattleTeamsDB.teams[index] or nil
-    
-    if team then
-        name = team.name
-        if not team.icon and team.pets and team.pets[1] then
-            icon = select(9, C_PetJournal.GetPetInfoByPetID(team.pets[1][1]))
-            Log("Icon lookup: "..team.pets[1][1].." is "..tostring(icon))
-        else
-            icon = team.icon
-        end
-        quest = team.quest
-    else
-        Log("Invalid index: "..index)
-        name = "Unknown "..index
-        icon = nil
-        quest = nil
-    end
-    return name, icon, quest
-end
-
---------------------------------------------------
--- MacroDB functions
---------------------------------------------------
-local MAX_ACCOUNT_MACROS = MAX_ACCOUNT_MACROS or 36
-MacroDB = {}
-
-function MacroDB.Load(name)
+--- Loads team data from account-wide macros
+function PetBattleTeams_LoadMacro()
     local teamData = {}
     local numMacros = GetNumMacros()
     for i=1, numMacros do
@@ -212,6 +171,7 @@ function MacroDB.Load(name)
     return teams
 end
 
+--- Saves team data to account-wide macros
 function PetBattleTeams_SaveMacro()
     local teamData = {}
     for i=1, #PetBattleTeamsDB.teams do
@@ -226,7 +186,6 @@ function PetBattleTeams_SaveMacro()
     
     macroData = {}
     for i=0, teamData:len() / 255 do
-        --Log(string.format("%s, %s", i, (teamData:len() / 255)))
         tinsert(macroData, string.sub(teamData, 1 + i * 255, i * 255 + 255))
     end
     
@@ -253,23 +212,26 @@ end
 --------------------------------------------------
 -- Other functions
 --------------------------------------------------
+--- Activates the team at the given index
 function PetBattleTeams_ActivateTeam(index)
     index = index or PetBattleTeams.selectedIndex
     if not index then
-        print("No team selected!")
+        Log("No team selected!")
         return
     end
     
     local team = PetBattleTeamsDB.teams[index]
-    for pIndex=1, MAX_ACTIVE_PETS do
-        local pet = team.pets[pIndex]
+    for i=1, MAX_ACTIVE_PETS do
+        local pet = team.pets[i]
         local petGUID = pet[1]
         if tonumber(petGUID) > 0 and C_PetJournal.GetPetInfoByPetID(petGUID) then
-            Log(string.format("SetPet: %i %s", pIndex, petGUID))
-            C_PetJournal.SetPetLoadOutInfo(pIndex, petGUID)
-            for aIndex=1, MAX_ACTIVE_ABILITIES do
-                Log(string.format("Pet: %i, Ability: %i", pIndex, pet[aIndex+1]))
-                C_PetJournal.SetAbility(pIndex, aIndex, tonumber(pet[aIndex + 1]))
+            Log(string.format("SetPet: %i %s", i, petGUID))
+            C_PetJournal.SetPetLoadOutInfo(i, petGUID)
+            -- TODO: SetAbility seems to be throttled.
+            --       Look at BattlePetTabs addon for an OnUpdate workaround.
+            for a=1, MAX_ACTIVE_ABILITIES do
+                Log(string.format("Pet: %i, Ability: %i", i, pet[a+1]))
+                C_PetJournal.SetAbility(i, a, tonumber(pet[a + 1]))
             end
         else
             Log("Invalid GUID: "..petGUID)
@@ -282,26 +244,27 @@ function PetBattleTeams_ActivateTeam(index)
         Log("UpdateAll")
         PetJournal_UpdateAll()
     else
-        print("Fatal error, couldn't update Pet Journal UI!")
+        Log("Fatal error, couldn't update Pet Journal UI!")
     end
 end
 
 function PetBattleTeams_OnEvent(self, event, ...)
     local arg1, arg2 = ...
     if "PLAYER_ENTERING_WORLD" == event then
-        PetBattleTeamsDB.teams = MacroDB.Load("_MacroDB") or PetBattleTeamsDB.teams
+        PetBattleTeamsDB.teams = PetBattleTeams_LoadMacro() or PetBattleTeamsDB.teams
     elseif "QUEST_ACCEPTED" == event then
         local questID = arg2
         if PetBattleTeamsDB.autoQuest then
             local numTeams = #PetBattleTeamsDB.teams
-            for iTeam=1, numTeams do
-                local team = PetBattleTeamsDB.teams[iTeam]
-                if team.questID and team.questID == questID then
+            for i=1, numTeams do
+                local team = PetBattleTeamsDB.teams[i]
+                if team.questID and (team.questID == questID) then
                     Log("Team "..team.name.." ACTIVATED!")
-                    PetBattleTeams.selectedIndex = iTeam
-                    PetBattleTeams_ActivateTeam(iTeam)
-                    for iPet=1, MAX_ACTIVE_PETS do
-                        local health, maxHealth = C_PetJournal.GetPetStats(team.pets[iPet][1])
+                    PetBattleTeams.selectedIndex = i
+                    PetBattleTeams_ActivateTeam(i)
+                    -- Unhealed pet warning
+                    for p=1, MAX_ACTIVE_PETS do
+                        local health, maxHealth = C_PetJournal.GetPetStats(team.pets[p][1])
                         if not (health == maxHealth) then
                             Log("Warning: Pets are not fully healed!")
                             break
