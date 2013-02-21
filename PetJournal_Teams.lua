@@ -47,16 +47,11 @@ StaticPopupDialogs["PET_BATTLE_TEAMS_SET_NAME"] = {
     maxLetters = 16,
     OnAccept = function(self)
         local text = self.editBox:GetText()
-        PetBattleTeams_SetTeamName(self.data, text)
-        --C_PetJournal.SetCustomName(self.data, text)
-        --PetJournal_UpdateAll()
+        PetBattleTeams_SetTeamName(text, self.data)
     end,
     EditBoxOnEnterPressed = function(self)
-        local parent = self:GetParent()
-        local text = parent.editBox:GetText()
-        PetBattleTeams_SetTeamName(self.data, text)
-        --C_PetJournal.SetCustomName(parent.data, text)
-        --PetJournal_UpdateAll()
+        local text = self:GetParent().editBox:GetText()
+        PetBattleTeams_SetTeamName(text, self.data)
         parent:Hide()
     end,
     OnShow = function(self)
@@ -68,20 +63,39 @@ StaticPopupDialogs["PET_BATTLE_TEAMS_SET_NAME"] = {
     end,
     exclusive = 1,
     hideOnEscape = 1,
+    preferredIndex = STATICPOPUP_NUMDIALOGS,
     timeout = 0,
 }
 
-function PetBattleTeams_SetTeamName(isNew, teamName)
+StaticPopupDialogs["PET_BATTLE_TEAMS_DELETE"] = {
+	text = "Do you really want to delete this team?",
+	button1 = OKAY,
+	button2 = CANCEL,
+	OnAccept = function(self)
+		PetBattleTeams_DeleteCurrentTeam()
+	end,
+	timeout = 0,
+	whileDead = 1,
+	exclusive = 1,
+	hideOnEscape = 1
+}
+
+function PetBattleTeams_DeleteCurrentTeam()
+    table.wipe(PetBattleTeamsDB.teams[PetBattleTeams.selectedIndex])
+    PetBattleTeams_Update()
+end
+
+function PetBattleTeams_SetTeamName(teamName, newTeam)
     if teamName:len() > 0 then
-        if isNew then
+        if newTeam then
             local team = {
                 name = teamName,
                 icon = nil,
                 pets = {},
                 quest = 0
             }
-            for index=1, MAX_ACTIVE_PETS do
-                local petGUID, ability1, ability2, ability3, locked = C_PetJournal.GetPetLoadOutInfo(index)
+            for i=1, MAX_ACTIVE_PETS do
+                local petGUID, ability1, ability2, ability3, locked = C_PetJournal.GetPetLoadOutInfo(i)
                 if petGUID then
                     tinsert(team.pets, {petGUID, ability1, ability2, ability3})
                     if not team.icon then
@@ -91,7 +105,9 @@ function PetBattleTeams_SetTeamName(isNew, teamName)
             end
             tinsert(PetBattleTeamsDB.teams, team)
         else
-            print("TODO: Rename: "..teamName)
+            local team = PetBattleTeamsDB.teams[PetBattleTeams.selectedIndex]
+            print("Renamed: "..team.name.." -> "..teamName)
+            team.name = teamName
         end
         PetBattleTeams_Update()
     end
@@ -278,7 +294,10 @@ end
 
 function PetBattleTeams_OnLoad(self)
     -- Hooks
-    --PetJournal:HookScript("OnShow", PetBattleTeams_OnShow)
+    --PetJournal:HookScript("OnShow", function()
+    --    PetBattleTeams_Update()
+    --    PetBattleTeams:Show()
+    --)
     --PetJournal:HookScript("OnHide", PetBattleTeams_OnHide)
     
     -- DB settings
@@ -430,7 +449,7 @@ function PetBattleTeamsOptionsMenu_Init(self, level)
     info.disabled = nil
     
     info.text = DELETE
-    info.func = function() Log("TODO: Delete") end
+    info.func = function() StaticPopup_Show("PET_BATTLE_TEAMS_DELETE") end
     UIDropDownMenu_AddButton(info, level)
     info.disabled = nil
     
@@ -466,13 +485,13 @@ function PetBattleTeam_OnClick(self, button)
 	if (UIDropDownMenu_GetCurrentDropDown() == PetBattleTeams.optionsMenu) then
 		HideDropDownMenu(1)
 	end
+    PetBattleTeams.selectedIndex = self.index
     if "RightButton" == button then
         ToggleDropDownMenu(1, nil, PetBattleTeams.optionsMenu, self, 80, 20)
     else
         if not self.teamName then
             StaticPopup_Show("PET_BATTLE_TEAMS_SET_NAME", nil, nil, true)
         else
-            PetBattleTeams.selectedIndex = self.index
             PetBattleTeams_Update()
             PetBattleTeams_ActivateTeam()
         end
