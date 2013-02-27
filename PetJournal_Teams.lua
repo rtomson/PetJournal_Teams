@@ -237,21 +237,38 @@ function PetBattleTeams_ActivateTeam(index)
     end
     
     local team = PetBattleTeamsDB.teams[index]
+    local setAbilities = 0
     for i=1, MAX_ACTIVE_PETS do
         local pet = team.pets[i]
         local petGUID = pet[1]
         if tonumber(petGUID) > 0 and C_PetJournal.GetPetInfoByPetID(petGUID) then
-            Log(string.format("SetPet: %i %s", i, petGUID))
-            C_PetJournal.SetPetLoadOutInfo(i, petGUID)
-            -- TODO: SetAbility seems to be throttled.
-            --       Look at BattlePetTabs addon for an OnUpdate workaround.
+            if petGUID ~= C_PetJournal.GetPetLoadOutInfo(i) then
+                Log(string.format("SetPet: %i %s", i, petGUID))
+                C_PetJournal.SetPetLoadOutInfo(i, petGUID)
+            end
+            
+            local ability = 0
             for a=1, MAX_ACTIVE_ABILITIES do
-                Log(string.format("Pet: %i, Ability: %i", i, pet[a+1]))
-                C_PetJournal.SetAbility(i, a, tonumber(pet[a + 1]))
+                ability = pet[a + 1]
+                if ability ~= select(a + 1, C_PetJournal.GetPetLoadOutInfo(i)) then
+                    Log(string.format("Pet: %i, Ability: %i", i, ability))
+                    C_PetJournal.SetAbility(i, a, ability)
+                else
+                    setAbilities = setAbilities + 1
+                end
             end
         else
             Log("Invalid GUID: "..petGUID)
         end
+    end
+    
+    -- SetAbility is throttled so we have to wrap it with an OnUpdate event.
+    if setAbilities ~= MAX_ACTIVE_PETS * MAX_ACTIVE_ABILITIES then
+        PetBattleTeams.needUpdate = true
+        --PetBattleTeams:SetScript("OnUpdate", PetBattleTeams_OnUpdate)
+    else
+        PetBattleTeams.needUpdate = false
+        --PetBattleTeams:SetScript("OnUpdate", nil)
     end
     
     if PetJournal_UpdatePetLoadOut then
@@ -313,6 +330,8 @@ function PetBattleTeams_OnLoad(self)
     -- Check for a MacroDB
     --PetBattleTeamsDB.teams = MacroDB.Load("_MacroDB") or PetBattleTeamsDB.teams
     
+    PetBattleTeams:SetScript("OnUpdate", PetBattleTeams_OnUpdate)
+    
     -- Make room for our UI
     PetBattleTeams_ModifyPetJournalFrame()
     
@@ -325,6 +344,16 @@ end
 function PetBattleTeams_OnShow()
     --PetBattleTeams_Update()
     --PetBattleTeams:Show()
+end
+
+function PetBattleTeams_OnUpdate(self, elapsed)
+    if true == self.needUpdate then
+        --self.elapsed = self.elapsed + elapsed
+        --if self.elapsed > 0.25 then
+        --    self.elapsed = 0
+            PetBattleTeams_ActivateTeam()
+        --end
+    end
 end
 
 function PetBattleTeams_Collapse()
