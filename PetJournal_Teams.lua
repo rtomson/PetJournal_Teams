@@ -449,10 +449,12 @@ function PetBattleTeams_Update(scrollToSelected)
             --    PetBattleTeam_OnEnter(button)
             --end
         elseif index == numTeams + 1 then
+            button.index = nil
             button.teamName = nil
             button.text:SetText("New Team")
             button.text:SetTextColor(GREEN_FONT_COLOR.r, GREEN_FONT_COLOR.g, GREEN_FONT_COLOR.b)
             button.icon:SetTexture("Interface\\PaperDollInfoFrame\\Character-Plus")
+            button:UnlockHighlight()
             button:Show()
         else
             button:Hide()
