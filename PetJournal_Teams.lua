@@ -17,6 +17,7 @@ local MAX_ACTIVE_ABILITIES = 3
 local MAX_PET_ABILITIES = 6
 local PETJOURNAL_DEFAULT_WIDTH = PetJournal:GetWidth()
 local PETJOURNAL_EXPANDED_WIDTH = PETJOURNAL_DEFAULT_WIDTH + 202
+local BATTLE_PET_TEAM = "Battle Pet Teams"
 
 DAILY_BATTLE_PET_QUESTS = {
     {31909, "Grand Master Trixxy"},
@@ -393,8 +394,6 @@ function PetBattleTeams_Expand()
 end
 
 function PetBattleTeams_Update(scrollToSelected)
-    PetBattleTeams_UpdateSelectedIndex()
-    
     local scrollFrame = PetBattleTeamsScrollFrame
     local offset = HybridScrollFrame_GetOffset(scrollFrame)
     local buttons = scrollFrame.buttons
@@ -427,7 +426,7 @@ function PetBattleTeams_Update(scrollToSelected)
                 teamIcon = team.icon
             end
             
-            if questID and DAILY_BATTLE_PET_QUESTS[questID] then
+            if questID and type(DAILY_BATTLE_PET_QUESTS[questID]) == "string" then
                 teamName = "|TInterface\\GossipFrame\\DailyQuestIcon:0|t "..DAILY_BATTLE_PET_QUESTS[questID]
             end
             
@@ -449,31 +448,18 @@ function PetBattleTeams_Update(scrollToSelected)
             --    PetBattleTeam_OnEnter(button)
             --end
         elseif index == numTeams + 1 then
+            button.index = nil
             button.teamName = nil
             button.text:SetText("New Team")
             button.text:SetTextColor(GREEN_FONT_COLOR.r, GREEN_FONT_COLOR.g, GREEN_FONT_COLOR.b)
             button.icon:SetTexture("Interface\\PaperDollInfoFrame\\Character-Plus")
+            button:UnlockHighlight()
             button:Show()
         else
             button:Hide()
         end    
     end
     HybridScrollFrame_Update(scrollFrame, (numTeams + 1) * buttonHeight, scrollFrame:GetHeight())
-end
-
-function PetBattleTeams_UpdateSelectedIndex()
-    --local numTeams = GetNumBattlePetTeams()
-    local numTeams = #PetBattleTeamsDB.teams
-    for index=1, numTeams do
-        --local teamName, teamIcon, questID = GetBattlePetTeamInfo(index)
-        if index == PetBattleTeams.selectedIndex then
-            --PetBattleTeams.selectedIndex = index
-            PetBattleTeamsActivateButton:Enable()
-            return
-        end
-    end
-    PetBattleTeams.selectedIndex = nil
-    PetBattleTeamsActivateButton:Disable()
 end
 
 function PetBattleTeamsOptionsMenu_Init(self, level, menuList)
