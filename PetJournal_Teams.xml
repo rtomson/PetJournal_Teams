@@ -306,7 +306,6 @@
 				<Scripts>
 					<OnLoad>
 						self:SetChecked(0)
-						self:Disable()
 					</OnLoad>
 					<OnClick>
 						if self:GetChecked() then
@@ -314,7 +313,10 @@
 						else
 							PlaySound("igMainMenuOptionCheckBoxOn")
 						end
-						PetBattleTeamsDB.macroDB = true
+						PetBattleTeamsDB.useMacros = self:GetChecked()
+						if PetBattleTeamsDB.useMacros then
+							PetBattleTeamsDB_SaveMacro()
+						end
 					</OnClick>
 				</Scripts>
 				<NormalTexture file="Interface\Buttons\UI-CheckBox-Up"/>

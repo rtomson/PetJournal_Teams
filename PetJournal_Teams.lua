@@ -98,7 +98,9 @@ StaticPopupDialogs["PET_BATTLE_TEAMS_DELETE"] = {
 function PetBattleTeams_DeleteCurrentTeam()
     table.remove(PetBattleTeamsDB.teams, PetBattleTeams.selectedIndex)
     PetBattleTeams_Update()
-    PetBattleTeams_SaveMacro()
+    if PetBattleTeamsDB.useMacros then
+        PetBattleTeams_SaveMacro()
+    end
 end
 
 function PetBattleTeams_SetTeamName(teamName, newTeam)
@@ -127,7 +129,9 @@ function PetBattleTeams_SetTeamName(teamName, newTeam)
             team.questID = tonumber(teamName)
         end
         PetBattleTeams_Update()
-        PetBattleTeams_SaveMacro()
+        if PetBattleTeamsDB.useMacros then
+            PetBattleTeams_SaveMacro()
+        end
     end
 end
 
@@ -209,12 +213,24 @@ function PetBattleTeams_SaveMacro()
     end
     teamData = table.concat(teamData, "\n")
     
-    macroData = {}
+    local macroData = {}
     for i=0, teamData:len() / 255 do
         tinsert(macroData, string.sub(teamData, 1 + i * 255, i * 255 + 255))
     end
     
-    if #macroData + GetNumMacros() > MAX_ACCOUNT_MACROS then
+    local currentPetMacros = 0
+    local numMacros = GetNumMacros()
+    for i=1, numMacros do
+        local name, _, body = GetMacroInfo(i)
+        if strmatch(name, MACRO_NAME) then
+            currentPetMacros = currentPetMacros + 1
+            if currentPetMacros > #macroData then
+                DeleteMacro(name)
+            end
+        end
+    end
+    
+    if (#macroData + numMacros - currentPetMacros) > MAX_ACCOUNT_MACROS then
         DEFAULT_CHAT_FRAME:AddMessage("Cannot save team data; no macro slots available.")
         return
     end
@@ -232,6 +248,7 @@ function PetBattleTeams_SaveMacro()
             EditMacro(index, name, "INV_MISC_QUESTIONMARK", macroData[i])
         end
     end
+    
 end
 
 --------------------------------------------------
@@ -342,6 +359,7 @@ function PetBattleTeams_OnLoad(self)
     PetBattleTeams:SetScript("OnUpdate", PetBattleTeams_OnUpdate)
     
     -- Make room for our UI
+    PetBattleTeamsUseMacros:SetChecked(PetBattleTeamsDB.useMacros or 0)
     PetBattleTeams_ModifyPetJournalFrame()
     
     PetJournalExpandButton2.collapseTooltip = L["Hide Pet Battle Teams"]
@@ -497,9 +515,6 @@ function PetBattleTeamsOptionsMenu_Init(self, level, menuList)
     end
 end
 
-function PetBattleTeamsSaveButton_OnClick(self)
-    PetBattleTeams_SaveMacro()
-end
 
 function PetBattleTeamsScrollFrame_OnLoad(self)
     HybridScrollFrame_OnLoad(self)
