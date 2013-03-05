@@ -1,0 +1,4 @@
+package-as: PetJournal_Teams
+ignore:
+    - README.md
+
