@@ -15,33 +15,26 @@ local MAX_ACCOUNT_MACROS = MAX_ACCOUNT_MACROS or 36
 local MAX_ACTIVE_PETS = 3
 local MAX_ACTIVE_ABILITIES = 3
 local MAX_PET_ABILITIES = 6
-local PETJOURNAL_DEFAULT_WIDTH = PetJournal:GetWidth()
-local PETJOURNAL_EXPANDED_WIDTH = PETJOURNAL_DEFAULT_WIDTH + 202
 
-BATTLE_PET_TEAM = "Battle Pet Teams"
-BATTLE_PET_TEAM_INFO = "Pet Teams"
-BATTLE_PET_TEAM_USE_MACRO = "Enable macros"
-BATTLE_PET_TEAM_USE_MACRO_DESCRIPTION = "If checked, saves team information to your global macros."
-
-DAILY_BATTLE_PET_QUESTS = {
-    {31909, "Grand Master Trixxy"},
-    {31916, "Grand Master Lydia Accoste"},
-    {31926, "Grand Master Antari"},
-    {31935, "Grand Master Payne"},
-    {31953, "Grand Master Hyuna"},
-    {31954, "Grand Master Mo'ruk"},
-    {31955, "Grand Master Nishi"},
-    {31956, "Grand Master Yon"},
-    {31957, "Grand Master Shu"},
-    {31958, "Grand Master Aki"},
-    {31971, "Grand Master Obalis"},
-    {31991, "Grand Master Zusshi"},
-    {32175, "Darkmoon Pet Battle!"},
-    {32434, "Burning Pandaren Spirit"},
-    {32439, "Flowing Pandaren Spirit"},
-    {32440, "Whispering Pandaren Spirit"},
-    {32441, "Thundering Pandaren Spirit"},
-    {32604, "Beasts of Fable"},
+local DAILY_BATTLE_PET_QUESTS = {
+    {31909, L["Grand Master Trixxy"]},
+    {31916, L["Grand Master Lydia Accoste"]},
+    {31926, L["Grand Master Antari"]},
+    {31935, L["Grand Master Payne"]},
+    {31953, L["Grand Master Hyuna"]},
+    {31954, L["Grand Master Mo'ruk"]},
+    {31955, L["Grand Master Nishi"]},
+    {31956, L["Grand Master Yon"]},
+    {31957, L["Grand Master Shu"]},
+    {31958, L["Grand Master Aki"]},
+    {31971, L["Grand Master Obalis"]},
+    {31991, L["Grand Master Zusshi"]},
+    {32175, L["Darkmoon Pet Battle!"]},
+    {32434, L["Burning Pandaren Spirit"]},
+    {32439, L["Flowing Pandaren Spirit"]},
+    {32440, L["Whispering Pandaren Spirit"]},
+    {32441, L["Thundering Pandaren Spirit"]},
+    {32604, L["Beasts of Fable"]},
 }
 setmetatable(DAILY_BATTLE_PET_QUESTS, {
     __index = function (self, key)
@@ -56,6 +49,12 @@ setmetatable(DAILY_BATTLE_PET_QUESTS, {
         return nil
     end
 })
+
+-- Localization
+BATTLE_PET_TEAM = L["BATTLE_PET_TEAM"]
+BATTLE_PET_TEAM_INFO = L["BATTLE_PET_TEAM_INFO"]
+BATTLE_PET_TEAM_USE_MACRO = L["BATTLE_PET_TEAM_USE_MACRO"]
+BATTLE_PET_TEAM_USE_MACRO_DESCRIPTION = L["BATTLE_PET_TEAM_USE_MACRO_DESCRIPTION"]
 
 --------------------------------------------------
 -- Debug

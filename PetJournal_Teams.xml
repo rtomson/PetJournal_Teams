@@ -115,7 +115,7 @@
                         <Anchor point="TOP" x="0" y="12"/>
                     </Anchors>
                 </Texture>
-                <FontString name="$parentHeaderText" inherits="GameFontNormal" text="BATTLE_PET_TEAMS">
+                <FontString name="$parentHeaderText" inherits="GameFontNormal" text="BATTLE_PET_TEAM">
                     <Size x="185" y="12"/>
                     <Anchors>
                         <Anchor point="TOP" relativeTo="$parentHeader" x="0" y="-14"/>
