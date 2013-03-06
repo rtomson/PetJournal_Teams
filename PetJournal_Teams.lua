@@ -65,9 +65,15 @@ local function Log(...)
     end
 end
 
-local function PetBattleTeams_SetTeamName(teamName, isNew)
+local function PetBattleTeams_SetTeamName(teamName, index)
+    index = index or PetBattleTeams.selectedIndex
     if teamName:len() > 0 then
-        if isNew then
+        if index then
+            local team = PetBattleTeamsDB.teams[index]
+            Log("Renamed: "..team.name.." -> "..teamName)
+            team.name = teamName
+            team.questID = tonumber(teamName)
+        else
             local team = {
                 name = teamName,
                 icon = nil,
@@ -82,11 +88,6 @@ local function PetBattleTeams_SetTeamName(teamName, isNew)
                 end
             end
             tinsert(PetBattleTeamsDB.teams, team)
-        else
-            local team = PetBattleTeamsDB.teams[PetBattleTeams.selectedIndex]
-            Log("Renamed: "..team.name.." -> "..teamName)
-            team.name = teamName
-            team.questID = tonumber(teamName)
         end
         PetBattleTeams_Update()
         if PetBattleTeamsDB.useMacros then
@@ -102,13 +103,19 @@ local function PetBattleTeams_NewTeamMenu_Init(self, level, menuList)
     info.notCheckable = true
     
     info.text = CUSTOM..CONTINUED
-    info.func = function() StaticPopup_Show("PET_BATTLE_TEAMS_SET_NAME", nil, nil, true) end
+    info.func = function()
+        local dialog = StaticPopup_Show("PET_BATTLE_TEAMS_SET_NAME")
+        dialog.data = nil -- no selected index
+    end
     UIDropDownMenu_AddButton(info, level)
     
     for _, quest in ipairs(DAILY_BATTLE_PET_QUESTS) do
         info.text = quest[2]
         info.arg1 = tostring(quest[1])
-        info.func = function(self, questID) PetBattleTeams_SetTeamName(questID, true); HideDropDownMenu(1) end
+        info.func = function(self, questID)
+            PetBattleTeams_SetTeamName(questID)
+            HideDropDownMenu(1)
+        end
         UIDropDownMenu_AddButton(info, level)
     end
     
@@ -127,7 +134,10 @@ local function PetBattleTeams_OptionsMenu_Init(self, level, menuList)
     
     if 1 == level then
         info.text = BATTLE_PET_RENAME
-        info.func = function() StaticPopup_Show("PET_BATTLE_TEAMS_SET_NAME", nil, nil, false) end
+        info.func = function()
+            local dialog = StaticPopup_Show("PET_BATTLE_TEAMS_SET_NAME")
+            dialog.data = PetBattleTeams.selectedIndex
+        end
         UIDropDownMenu_AddButton(info, level)
         
         info.text = "Daily Quests"
@@ -138,7 +148,10 @@ local function PetBattleTeams_OptionsMenu_Init(self, level, menuList)
         info.text = DELETE
         info.hasArrow = false
         info.menuList = nil
-        info.func = function() StaticPopup_Show("PET_BATTLE_TEAMS_DELETE") end
+        info.func = function()
+            local dialog = StaticPopup_Show("PET_BATTLE_TEAMS_DELETE")
+            dialog.data = PetBattleTeams.selectedIndex
+        end
         UIDropDownMenu_AddButton(info, level)
         
         info.text = CANCEL
@@ -148,7 +161,10 @@ local function PetBattleTeams_OptionsMenu_Init(self, level, menuList)
         for _, quest in ipairs(DAILY_BATTLE_PET_QUESTS) do
             info.text = quest[2]
             info.arg1 = tostring(quest[1])
-            info.func = function(self, questID) PetBattleTeams_SetTeamName(questID); HideDropDownMenu(1) end
+            info.func = function(self, questID)
+                PetBattleTeams_SetTeamName(questID)
+                HideDropDownMenu(1)
+            end
             UIDropDownMenu_AddButton(info, level)
         end
     end
@@ -218,7 +234,7 @@ local function PetBattleTeams_Delete(index)
 end
 
 -- Loads team data from account-wide macros
-local function PetBattleTeams_LoadMacro()
+function PetBattleTeams_LoadMacro()
     local teamData = {}
     local numMacros = GetNumMacros()
     for i=1, numMacros do
@@ -256,7 +272,7 @@ local function PetBattleTeams_LoadMacro()
 end
 
 -- Saves team data to account-wide macros
-local function PetBattleTeams_SaveMacro()
+function PetBattleTeams_SaveMacro()
     local teamData = {}
     for i=1, #PetBattleTeamsDB.teams do
         local team = PetBattleTeamsDB.teams[i]
