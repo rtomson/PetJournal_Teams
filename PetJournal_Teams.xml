@@ -180,7 +180,7 @@
 						end
 						PetBattleTeamsDB.useMacros = self:GetChecked()
 						if PetBattleTeamsDB.useMacros then
-							PetBattleTeams_SaveMacro()
+							-- PetBattleTeams_SaveMacro()
 						end
 					</OnClick>
 					<OnEnter>

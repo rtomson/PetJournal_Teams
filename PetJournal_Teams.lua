@@ -56,6 +56,11 @@ BATTLE_PET_TEAM_INFO = L["BATTLE_PET_TEAM_INFO"]
 BATTLE_PET_TEAM_USE_MACRO = L["BATTLE_PET_TEAM_USE_MACRO"]
 BATTLE_PET_TEAM_USE_MACRO_DESCRIPTION = L["BATTLE_PET_TEAM_USE_MACRO_DESCRIPTION"]
 
+-- DB settings
+PetBattleTeamsDB = {
+    teams = {}
+}
+
 --------------------------------------------------
 -- Debug
 --------------------------------------------------
@@ -405,6 +410,7 @@ function PetBattleTeams_OnEvent(self, event, ...)
     local arg1, arg2 = ...
     if "PLAYER_ENTERING_WORLD" == event then
         if PetBattleTeamsDB.useMacros then
+            PetBattleTeamsUseMacros:SetChecked(true)
             PetBattleTeamsDB.teams = PetBattleTeams_LoadMacro()
         end
     elseif "QUEST_ACCEPTED" == event then
@@ -478,17 +484,10 @@ function PetBattleTeams_OnLoad(self)
         hideOnEscape = 1
     }
 
-    -- DB settings
-    if type(PetBattleTeamsDB) ~= "table" then
-        PetBattleTeamsDB = {
-            teams = {}
-        }
-    end
     
     -- Check for a MacroDB
     --PetBattleTeamsDB.teams = MacroDB.Load("_MacroDB") or PetBattleTeamsDB.teams
     
-    PetBattleTeamsUseMacros:SetChecked(PetBattleTeamsDB.useMacros or 0)
     UIDropDownMenu_Initialize(self.optionsMenu, PetBattleTeams_OptionsMenu_Init, "MENU")
     UIDropDownMenu_Initialize(self.newTeamMenu, PetBattleTeams_NewTeamMenu_Init, "MENU")
     
