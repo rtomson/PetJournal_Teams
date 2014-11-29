@@ -188,7 +188,7 @@ local function PetBattleTeams_Activate(index)
     for i=1, MAX_ACTIVE_PETS do
         local pet = team.pets[i]
         local petGUID = pet[1]
-        if tonumber(petGUID) > 0 and C_PetJournal.GetPetInfoByPetID(petGUID) then
+        if C_PetJournal.GetPetInfoByPetID(petGUID) then
             if petGUID ~= C_PetJournal.GetPetLoadOutInfo(i) then
                 C_PetJournal.SetPetLoadOutInfo(i, petGUID)
             end
@@ -261,11 +261,9 @@ function PetBattleTeams_LoadMacro()
                 name = teamName,
                 icon = nil, -- Set to the first pet when first used
                 pets = {
-                    -- API calls are not consistent. Some require numbers, some strings, but
-                    -- all will take a 16-digit hex string for the GUID
-                    {string.format("0x%016s", p1), tonumber(a11), tonumber(a12), tonumber(a13)},
-                    {string.format("0x%016s", p2), tonumber(a21), tonumber(a22), tonumber(a23)},
-                    {string.format("0x%016s", p3), tonumber(a31), tonumber(a32), tonumber(a33)}
+                    {string.format("BattlePet-0-%016s", p1), tonumber(a11), tonumber(a12), tonumber(a13)},
+                    {string.format("BattlePet-0-%016s", p2), tonumber(a21), tonumber(a22), tonumber(a23)},
+                    {string.format("BattlePet-0-%016s", p3), tonumber(a31), tonumber(a32), tonumber(a33)}
                 },
                 questID = tonumber(teamName)
             }

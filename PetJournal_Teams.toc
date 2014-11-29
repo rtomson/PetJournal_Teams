@@ -1,4 +1,4 @@
-## Interface: 50200
+## Interface: 60000
 ## Title: PetJournal Teams
 ## Notes: Provides an interface for managing battle pet teams.
 ## Author: Windrunner-US:Integer
