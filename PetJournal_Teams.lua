@@ -1,7 +1,3 @@
---===========================================================================--
--- Addon Initialization
---===========================================================================--
-
 local addonName, addon = ...
 local L = addon.L
 
@@ -17,24 +13,34 @@ local MAX_ACTIVE_ABILITIES = 3
 local MAX_PET_ABILITIES = 6
 
 local DAILY_BATTLE_PET_QUESTS = {
-    {31909, L["Grand Master Trixxy"]},
-    {31916, L["Grand Master Lydia Accoste"]},
-    {31926, L["Grand Master Antari"]},
-    {31935, L["Grand Master Payne"]},
-    {31953, L["Grand Master Hyuna"]},
-    {31954, L["Grand Master Mo'ruk"]},
-    {31955, L["Grand Master Nishi"]},
-    {31956, L["Grand Master Yon"]},
-    {31957, L["Grand Master Shu"]},
-    {31958, L["Grand Master Aki"]},
-    {31971, L["Grand Master Obalis"]},
-    {31991, L["Grand Master Zusshi"]},
-    {32175, L["Darkmoon Pet Battle!"]},
-    {32434, L["Burning Pandaren Spirit"]},
-    {32439, L["Flowing Pandaren Spirit"]},
-    {32440, L["Whispering Pandaren Spirit"]},
-    {32441, L["Thundering Pandaren Spirit"]},
-    {32604, L["Beasts of Fable"]},
+--    {"Mists of Pandaria", {
+        {31909, L["Grand Master Trixxy"]},
+        {31916, L["Grand Master Lydia Accoste"]},
+        {31926, L["Grand Master Antari"]},
+        {31935, L["Grand Master Payne"]},
+        {31953, L["Grand Master Hyuna"]},
+        {31954, L["Grand Master Mo'ruk"]},
+        {31955, L["Grand Master Nishi"]},
+        {31956, L["Grand Master Yon"]},
+        {31957, L["Grand Master Shu"]},
+        {31958, L["Grand Master Aki"]},
+        {31971, L["Grand Master Obalis"]},
+        {31991, L["Grand Master Zusshi"]},
+        {32175, L["Darkmoon Pet Battle!"]},
+        {32434, L["Burning Pandaren Spirit"]},
+        {32439, L["Flowing Pandaren Spirit"]},
+        {32440, L["Whispering Pandaren Spirit"]},
+        {32441, L["Thundering Pandaren Spirit"]},
+        {32604, L["Beasts of Fable"]},
+--    },
+--    {"Warlords of Draenor", {
+        {37203, L["Ashlei"]},
+        {37201, L["Cymre Brightblade"]},
+        {37205, L["Gargra"]},
+        {37208, L["Taralune"]},
+        {37206, L["Tarr the Terrible"]},
+        {37207, L["Vesharr"]},
+--    },
 }
 setmetatable(DAILY_BATTLE_PET_QUESTS, {
     __index = function (self, key)
@@ -50,24 +56,26 @@ setmetatable(DAILY_BATTLE_PET_QUESTS, {
     end
 })
 
--- Localization
 BATTLE_PET_TEAM = L["BATTLE_PET_TEAM"]
 BATTLE_PET_TEAM_INFO = L["BATTLE_PET_TEAM_INFO"]
 BATTLE_PET_TEAM_USE_MACRO = L["BATTLE_PET_TEAM_USE_MACRO"]
 BATTLE_PET_TEAM_USE_MACRO_DESCRIPTION = L["BATTLE_PET_TEAM_USE_MACRO_DESCRIPTION"]
 
--- DB settings
 PetBattleTeamsDB = {
     teams = {}
 }
 
---------------------------------------------------
--- Debug
---------------------------------------------------
 local function Log(...)
     if PetBattleTeamsDB and PetBattleTeamsDB.debug then
         DEFAULT_CHAT_FRAME:AddMessage("|cffff7d0aDebug:|r "..tostring(...))
     end
+end
+
+asdf = nil
+function id2guid(id)
+    local num = tonumber("0x"..string.match(string.upper(id), "[A-F%d]+$"))
+    local rtn = string.format("BattlePet-0-%012X", num)
+    return rtn
 end
 
 local function PetBattleTeams_SetTeamName(teamName, index)
@@ -83,7 +91,7 @@ local function PetBattleTeams_SetTeamName(teamName, index)
                 name = teamName,
                 icon = nil,
                 pets = {},
-                questID = 0
+                questID = tonumber(teamName)
             }
             for i=1, MAX_ACTIVE_PETS do
                 local petGUID, ability1, ability2, ability3, locked = C_PetJournal.GetPetLoadOutInfo(i)
@@ -187,8 +195,9 @@ local function PetBattleTeams_Activate(index)
     local setAbilities = 0
     for i=1, MAX_ACTIVE_PETS do
         local pet = team.pets[i]
-        local petGUID = pet[1]
+        local petGUID = id2guid(pet[1])
         if C_PetJournal.GetPetInfoByPetID(petGUID) then
+            Log("activated-petGUID: "..petGUID..", type: "..type(petGUID))
             if petGUID ~= C_PetJournal.GetPetLoadOutInfo(i) then
                 C_PetJournal.SetPetLoadOutInfo(i, petGUID)
             end
@@ -203,7 +212,7 @@ local function PetBattleTeams_Activate(index)
                 end
             end
         else
-            Log("Invalid GUID: "..petGUID)
+            Log("Invalid GUID: "..petGUID..", type: "..type(petGUID))
         end
     end
     
@@ -261,9 +270,9 @@ function PetBattleTeams_LoadMacro()
                 name = teamName,
                 icon = nil, -- Set to the first pet when first used
                 pets = {
-                    {string.format("BattlePet-0-%016s", p1), tonumber(a11), tonumber(a12), tonumber(a13)},
-                    {string.format("BattlePet-0-%016s", p2), tonumber(a21), tonumber(a22), tonumber(a23)},
-                    {string.format("BattlePet-0-%016s", p3), tonumber(a31), tonumber(a32), tonumber(a33)}
+                    {id2guid(p1), tonumber(a11), tonumber(a12), tonumber(a13)},
+                    {id2guid(p2), tonumber(a21), tonumber(a22), tonumber(a23)},
+                    {id2guid(p3), tonumber(a31), tonumber(a32), tonumber(a33)}
                 },
                 questID = tonumber(teamName)
             }
@@ -316,11 +325,11 @@ function PetBattleTeams_SaveMacro()
     for i=1, #macroData do
         local name = MACRO_NAME..i
         local index = GetMacroIndexByName(name)
-        if 0 == index then
-            CreateMacro(name, "INV_MISC_QUESTIONMARK", macroData[i], nil)
-        else
-            EditMacro(index, name, "INV_MISC_QUESTIONMARK", macroData[i])
-        end
+        -- if 0 == index then
+        --     CreateMacro(name, "INV_MISC_QUESTIONMARK", macroData[i], nil)
+        -- else
+        --     EditMacro(index, name, "INV_MISC_QUESTIONMARK", macroData[i])
+        -- end
     end
     
 end
@@ -355,7 +364,7 @@ function PetBattleTeams_Update(scrollToSelected)
             local teamName, teamIcon, questID = team.name, team.icon, team.questID
             
             if not teamIcon then
-                team.icon = select(9, C_PetJournal.GetPetInfoByPetID(team.pets[1][1]))
+                team.icon = select(9, C_PetJournal.GetPetInfoByPetID(id2guid(team.pets[1][1])))
                 teamIcon = team.icon
             end
             
