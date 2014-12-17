@@ -71,11 +71,23 @@ local function Log(...)
     end
 end
 
-asdf = nil
-function id2guid(id)
-    local num = tonumber("0x"..string.match(string.upper(id), "[A-F%d]+$"))
-    local rtn = string.format("BattlePet-0-%012X", num)
-    return rtn
+local function id2guid(id)
+    if not id then
+        Log("Expected id, got nil: "..tostring(id))
+        return nil
+    end
+    local idx = tonumber("0x"..string.match(string.upper(id), "[A-F%d]+$"))
+    local guid = string.format("BattlePet-0-%012X", idx)
+    return guid
+end
+
+local function guid2id(guid)
+    if not guid then
+        Log("Expected guid, got nil: "..tostring(guid))
+        return 0
+    end
+    local id = tonumber("0x"..string.match(string.upper(guid), "[A-F%d]+$"))
+    return id
 end
 
 local function PetBattleTeams_SetTeamName(teamName, index)
@@ -193,20 +205,20 @@ local function PetBattleTeams_Activate(index)
     
     local team = PetBattleTeamsDB.teams[index]
     local setAbilities = 0
-    for i=1, MAX_ACTIVE_PETS do
-        local pet = team.pets[i]
+    for slotIndex=1, MAX_ACTIVE_PETS do
+        local pet = team.pets[slotIndex]
         local petGUID = id2guid(pet[1])
         if C_PetJournal.GetPetInfoByPetID(petGUID) then
             Log("activated-petGUID: "..petGUID..", type: "..type(petGUID))
-            if petGUID ~= C_PetJournal.GetPetLoadOutInfo(i) then
-                C_PetJournal.SetPetLoadOutInfo(i, petGUID)
+            if petGUID ~= C_PetJournal.GetPetLoadOutInfo(slotIndex) then
+                C_PetJournal.SetPetLoadOutInfo(slotIndex, petGUID)
             end
             
-            local ability = 0
-            for a=1, MAX_ACTIVE_ABILITIES do
-                ability = pet[a + 1]
-                if ability ~= select(a + 1, C_PetJournal.GetPetLoadOutInfo(i)) then
-                    C_PetJournal.SetAbility(i, a, ability)
+            local petSpellID = 0
+            for spellIndex=1, MAX_ACTIVE_ABILITIES do
+                petSpellID = pet[spellIndex + 1]
+                if petSpellID ~= select(spellIndex + 1, C_PetJournal.GetPetLoadOutInfo(slotIndex)) then
+                    C_PetJournal.SetAbility(slotIndex, spellIndex, petSpellID)
                 else
                     setAbilities = setAbilities + 1
                 end
@@ -290,7 +302,8 @@ function PetBattleTeams_SaveMacro()
         local team = PetBattleTeamsDB.teams[i]
         local teamStr = team.name
         for j=1, #team.pets do
-            teamStr = teamStr..string.format(":%x:%i:%i:%i", unpack(team.pets[j]))
+            local pet = team.pets[j]
+            teamStr = teamStr..string.format(":%x:%i:%i:%i", guid2id(pet[1]), pet[2], pet[3], pet[4])
         end
         tinsert(teamData, teamStr)
     end
@@ -325,11 +338,12 @@ function PetBattleTeams_SaveMacro()
     for i=1, #macroData do
         local name = MACRO_NAME..i
         local index = GetMacroIndexByName(name)
-        -- if 0 == index then
-        --     CreateMacro(name, "INV_MISC_QUESTIONMARK", macroData[i], nil)
-        -- else
-        --     EditMacro(index, name, "INV_MISC_QUESTIONMARK", macroData[i])
-        -- end
+        if 0 == index then
+            CreateMacro(name, "INV_MISC_QUESTIONMARK", macroData[i], nil)
+        else
+            EditMacro(index, name, "INV_MISC_QUESTIONMARK", macroData[i])
+        end
+        --Log(name..": "..macroData[i])
     end
     
 end
